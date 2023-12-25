@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql_instance01
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    ports:
+      - "3306:3306"
+    networks:
+      - flink-network
+    volumes:
+      - mysql_instance01_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --init-file /docker-entrypoint-initdb.d/init.sql  --bind-address=0.0.0.0
+
+
+  jobmanager01:
+    image: flink:1.16.0-scala_2.12-java8
+    container_name: jobmanager01
+    ports:
+      - "8081:8081"
+    networks:
+      - flink-network
+    volumes:
+      - ./entrypoint.sh:/opt/flink/entrypoint.sh
+      - ./jars:/opt/flink/jars
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+    entrypoint: /opt/flink/entrypoint.sh
+    command: jobmanager
+
+  taskmanager:
+    image: flink:1.16.0-scala_2.12-java8
+    container_name: taskmanager
+    networks:
+      - flink-network
+    volumes:
+       - ./entrypoint.sh:/opt/flink/entrypoint.sh
+       - ./jars:/opt/flink/jars
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+    entrypoint: /opt/flink/entrypoint.sh
+    command: taskmanager
+
+  taskmanager02:
+    image: flink:1.16.0-scala_2.12-java8
+    container_name: taskmanager02
+    networks:
+      - flink-network
+    volumes:
+      - ./entrypoint.sh:/opt/flink/entrypoint.sh
+      - ./jars:/opt/flink/jars
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+    entrypoint: /opt/flink/entrypoint.sh
+    command: taskmanager
+
+
+volumes:
+  mysql_instance01_data:
+
+networks:
+  flink-network:
+    driver: bridge
